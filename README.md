@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/yasserqureshi1/Sneaker-Monitors/">
-    ## Footlocker Monitor Updates (by Christopher Betancourt)
+    ## Footlocker Monitor Updates (by Christopher Betancourt) 
 
 ### New Features:
 
@@ -98,4 +98,5 @@ Currently the sites that have monitors are:
 - Snipes
 - Sivasdescalzo
 
+ALL CREDIT IS TO BE GIVEN TO THE ORIGNAL CREATOR yasserqureshi1
 
