@@ -1,12 +1,42 @@
 <p align="center">
   <a href="https://github.com/yasserqureshi1/Sneaker-Monitors/">
-    <img src="https://raw.githubusercontent.com/yasserqureshi1/Sneaker-Monitors/master/static/logo.jpg" alt="Logo" width="auto" height="128">
-  </a>
+    ## Footlocker Monitor Updates (by Christopher Betancourt)
+
+### New Features:
+
+We have made significant updates to the **Footlocker** monitor, with contributions by Christopher Betancourt. These changes enhance the functionality and adaptability of the monitor:
+
+1. **SMS Notifications**:
+    - The Footlocker monitor now has the capability to send SMS notifications for restocks or product releases, as an alternative to using Discord Webhook.
+    - Integration with the **Textlocal** API allows SMS alerts to be sent directly to a configured phone number.
+    - Configuration of SMS notifications can be managed in the `config.py` file, where you can provide your **Textlocal API Key**, sender name, and target phone number.
+
+2. **CAPTCHA Solving**:
+    - Footlocker frequently employs CAPTCHA challenges to block automated access.
+    - We've integrated **2Captcha** to solve these CAPTCHA challenges automatically, ensuring the monitor can continue functioning without manual intervention.
+    - To enable CAPTCHA solving, provide your **2Captcha API Key** (`TWOCAPTCHA_API_KEY`) in the `config.py` file.
+
+### Configuration Overview:
+
+To use the updated Footlocker monitor:
+
+1. **Configure `config.py`**:
+    - Set your region (`LOCATION`) to `US`, `UK`, or `AU`.
+    - Enable free proxies or provide your own proxy list for anonymity.
+    - Set up **Textlocal** SMS settings (`TEXTLOCAL_API_KEY`, `SENDER`, `TARGET_PHONE_NUMBER`).
+    - Provide your **2Captcha API Key** (`TWOCAPTCHA_API_KEY`) for CAPTCHA-solving functionality.
+
+### Running the Monitor:
+
+After configuring `config.py`, you can start the Footlocker monitor by running the `monitor.py` script:
+
+```sh
+python monitor.py
   
   <h3 align="center">Sneaker Monitors</h3>
 
   <p align="center">
-    A collection of web monitors that notify of restocks or releases on sneaker related sites through Discord Webhook
+    A collection of web monitors that notify of restocks or releases on sneaker related sites through Discord Webhook or SMS
     <br />
     <a href="https://github.com/yasserqureshi1/Sneaker-Monitors/">Report Bug</a>
     ·
@@ -29,7 +59,7 @@ Join my Discord Server for code, sneakers and everything in-between! Join here: 
 ## About the Project
 This project is aimed at providing web-monitors for various sites to the sneaker community for free. 
 A monitor is a tool that tracks and alerts about changes on website.
-These monitors currently notify if a restock or release occurs via Discord Webhook on popular sneaker releated websites.
+These monitors currently notify if a restock or release occurs via Discord Webhook or SMS on popular sneaker related websites.
 
 Today, competition to purchase sneakers is getting increasingly difficult with resellers using paid automated tools to give them a massive advantage over everyone else.
 As such, I have and will continue to develop monitors that will help those members that struggle to finally get the sneakers they want.
@@ -49,6 +79,7 @@ However, due to popular demand, I am developing a paid (but competitively priced
 * [About the Project](#about-the-project)
 * [Monitors](#monitors)
 * [Set Up](#set-up)
+* [Footlocker Monitor Updates](#footlocker-monitor-updates)
 * [Issues](#issues)
 * [License](#license)
 * [Contact](#contact)
@@ -60,57 +91,11 @@ Currently the sites that have monitors are:
 - Supreme
 - Nike SNKRS (Supports 42 countries - see the associated README file)
 - Nike
-- Footsites (Footlocker UK, US and AU)
+- Footsites (Footlocker UK, US, and AU)
 - Ssense
 - Zalando (UK)
 - Off-Spring (UK)
 - Snipes
 - Sivasdescalzo
 
-## Basic Steps
-
-Click on the image below to watch a YouTube tutorial on setting up the monitors...
-
-[![Watch the video](https://img.youtube.com/vi/wlhAtpUxLF4/mqdefault.jpg)](https://youtu.be/wlhAtpUxLF4)
-
-1. Clone or Download the repository
-    - Clone:
-    ```
-    git clone https://github.com/yasserqureshi1/Sneaker-Monitors.git
-    ```
-    - Download: Click on the green `Code` button and click on `Download ZIP`. Then unzip this folder
-    
-
-2. Install Dependencies
-    - Ensure you have [Python 3+](https://www.python.org/downloads/) and [pip](https://pip.pypa.io/en/stable/installing/) installed. 
-    - To install the dependencies, navigate to the cloned directory in Terminal or Command Prompt and use the command:
-```
-pip install -r requirements.txt
-```
-
-3. Configure the monitor you want to run by editting the `config.py` file within that folder.
-
-4. To start the monitor, you should run the `monitor.py`file. You can use the following command:
-  ```
-  python monitor.py
-  ```
-**NOTE:** The script needs to be running continuously for it to keep monitoring websites. As such, you should host it on a server. I have a YouTube tutorial on this [here](https://youtu.be/nmUSSlt4JKk). However, I suggest testing this out on your PC before using a server.
-
-
-## Issues
-
-If you find an issue, please open an issue [here](https://github.com/yasserqureshi1/Sneaker-Monitors/issues/new). 
-I will try to respond fairly quickly and try to come up with solution.
-
-I may ask you to provide the log file that is produced by the monitor.
-It contains no personal data but may help me diagnose where the issue arises.
-
-
-## License
-
-Distributed under the GNU General Public License v3.0 License. See ```LICENSE``` for more information. Selling this code without my consent is strictly prohibited. If sharing this or an updated copy of this repo requires this repo to be made freely available.
-
-## Contact
-
-Join my Discord server: [discord.gg/YasCommunity](https://discord.gg/YasCommunity)
 
