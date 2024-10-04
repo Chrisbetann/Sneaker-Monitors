@@ -1,9 +1,45 @@
 import requests
 import json
 import time
+import random
+from config import send_sms_via_textlocal, TWOCAPTCHA_API_KEY, TEXTLOCAL_API_KEY, SENDER, TARGET_PHONE_NUMBER
 
+# Function to solve CAPTCHA using 2Captcha service
+def solve_captcha(captcha_url, sitekey):
+    api_key = TWOCAPTCHA_API_KEY
 
-def US(ITEMS, user_agent, proxy, KEYWORDS, start):
+    # Send CAPTCHA solving request to 2Captcha with the correct sitekey
+    response = requests.post(
+        f'http://2captcha.com/in.php?key={api_key}&method=userrecaptcha&googlekey={sitekey}&url={captcha_url}')
+    print(f"2Captcha Response: {response.text}")  # Debugging line to check response
+
+    # Check for errors in the response
+    if 'OK|' not in response.text:
+        print(f"Error from 2Captcha: {response.text}")
+        return None
+
+    try:
+        captcha_id = response.text.split('|')[1]  # Extract the captcha_id
+    except IndexError:
+        print(f"Failed to parse captcha ID: {response.text}")
+        return None
+
+    # Wait for CAPTCHA to be solved
+    time.sleep(20)
+    captcha_result = requests.get(f'http://2captcha.com/res.php?key={api_key}&action=get&id={captcha_id}').text
+
+    while 'CAPCHA_NOT_READY' in captcha_result:
+        time.sleep(5)
+        captcha_result = requests.get(f'http://2captcha.com/res.php?key={api_key}&action=get&id={captcha_id}').text
+
+    if 'OK|' in captcha_result:
+        return captcha_result.split('|')[1]
+    else:
+        print(f"Error solving CAPTCHA: {captcha_result}")
+        return None
+
+# Functions to handle Foot Locker products
+def get_products(region, ITEMS, user_agent, proxy, KEYWORDS, start):
     headers = {
         'accept': 'application/json',
         'accept-encoding': 'gzip, deflate, br',
@@ -11,220 +47,74 @@ def US(ITEMS, user_agent, proxy, KEYWORDS, start):
         'sec-fetch-dest': 'empty',
         'sec-fetch-mode': 'cors',
         'sec-fetch-site': 'same-origin',
-        'x-fl-request-id': '7ea428d0-facd-11ec-8b70-b16510ce7958',
         'user-agent': user_agent
     }
-    url = 'https://www.footlocker.com/api/products/search?query=men&currentPage=1&sort=newArrivals&pageSize=60'
+
+    # URL setup based on region
+    if region == 'US':
+        url = 'https://www.footlocker.com/api/products/search?query=men&currentPage=1&sort=newArrivals&pageSize=60'
+    elif region == 'UK':
+        url = 'https://www.footlocker.co.uk/api/products/search?query=men&currentPage=1&sort=newArrivals&pageSize=60'
+        headers['x-api-lang'] = 'en-GB'
+    elif region == 'AU':
+        url = 'https://www.footlocker.com.au/api/products/search?query=men&currentPage=1&sort=newArrivals&pageSize=60'
+
     html = requests.get(url=url, headers=headers, proxies=proxy)
 
     try:
-        output = json.loads(html.text)['products']
-    except:
-        print('Could not load products. Below was the response: ')
-        print(html.text)
-        return None
+        response_json = json.loads(html.text)
 
-    to_discord = []
-    
+        # Handle CAPTCHA
+        if 'geo.captcha-delivery.com' in response_json.get('url', ''):
+            print('CAPTCHA detected, solving it...')
+            solved_captcha = solve_captcha(response_json['url'], 'replace_with_correct_sitekey')
+
+            if not solved_captcha:
+                print("Failed to solve CAPTCHA")
+                return []
+
+        if 'products' not in response_json:
+            print(f"CAPTCHA or error encountered. Response: {response_json}")
+            return []
+
+        output = response_json['products']
+
+    except json.JSONDecodeError:
+        print('Error decoding JSON. Response content:', html.text)
+        return []
+
     for product in output:
         try:
             sku = product['sku']
-            url = f'https://www.footlocker.com/api/products/pdp/{sku}'
+            url = f'{region}/api/products/pdp/{sku}'
             html = requests.get(url=url, headers=headers)
             item = json.loads(html.text)
-            
-            time.sleep(1)
 
-            # Sizes
+            time.sleep(random.uniform(5, 15))  # Randomized delay
+
             sizes = ''
-            sizes_start = 1
             for size in item['sellableUnits']:
                 store = [size['sku'], size['code']]
                 if size['stockLevelStatus'] == 'inStock' and store not in ITEMS:
                     ITEMS.append(store)
-                    if sizes_start == 1:
-                        sizes = ''
-                        sizes_start = 0
-                    else:
-                        sizes += '\n' + ''
-
-                elif size['stockLevelStatus'] != 'inStock' and store in ITEMS:
-                    # delete from ITEMS
-                    ITEMS.remove(store)
-
+                    sizes += f"\n{size['size']}"
 
             if start == 0 and sizes != '':
-                if KEYWORDS is []:
-                    to_discord.append(dict(
-                        name=item['name'],
-                        sku=product['sku'],
-                        price=product['price']['formattedValue'],
-                        thumbnail=product['images'][0]['url'],
-                        url='https://www.footlocker.com/product/'+product['name'].replace(' ', '-')+'/'+product['sku'] + '.html'
-                    ))
-                else:
-                    for key in KEYWORDS:
-                        if key.lower() in item['name'].lower():
-                            to_discord.append(dict(
-                                name=item['name'],
-                                sku=product['sku'],
-                                price=product['price']['formattedValue'],
-                                thumbnail=product['images'][0]['url'],
-                                url='https://www.footlocker.com/product/'+product['name'].replace(' ', '-')+'/'+product['sku'] + '.html'
-                            ))
+                message = f"Product: {item['name']}\nPrice: {product['price']['formattedValue']}\nSKU: {product['sku']}\nURL: {region}/product/{item['name'].replace(' ', '-')}/{product['sku']}.html"
+                send_sms_via_textlocal(message)
 
-        except:
-            pass
+        except (requests.exceptions.RequestException, json.JSONDecodeError) as e:
+            print(f"Error while processing product SKU {sku}: {e}")
+            continue
 
-    return to_discord
+    return []
 
+# Functions for each region (US, UK, AU)
+def US(ITEMS, user_agent, proxy, KEYWORDS, start):
+    return get_products('US', ITEMS, user_agent, proxy, KEYWORDS, start)
 
 def UK(ITEMS, user_agent, proxy, KEYWORDS, start):
-    url = 'https://www.footlocker.co.uk/api/products/search?query=men&currentPage=1&sort=newArrivals&pageSize=60'
-    headers = {
-        'accept': 'application/json',
-        'accept-encoding': 'gzip, deflate, br',
-        'accept-language': 'en-GB,en;q=0.9',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-origin',
-        'user-agent': user_agent,
-        'x-api-lang': 'en-GB'
-    }
-    html = requests.get(url=url, headers=headers, proxies=proxy)
-    try:
-        output = json.loads(html.text)['products']
-    except:
-        print('Could not load products. Below was the response: ')
-        print(html.text)
-        return None
-
-    to_discord = []
-    
-    for product in output:
-        try:
-            sku = product['sku']
-            url = f'https://www.footlocker.co.uk/api/products/pdp/{sku}'
-            html = requests.get(url=url, headers=headers)
-            item = json.loads(html.text)
-            time.sleep(1)
-
-            # Sizes
-            sizes = ''
-            sizes_start = 1
-            for size in item['sellableUnits']:
-                store = [size['sku'], size['code']]
-                if size['stockLevelStatus'] == 'inStock' and store not in ITEMS:
-                    ITEMS.append(store)
-                    if sizes_start == 1:
-                        sizes = ''
-                        sizes_start = 0
-                    else:
-                        sizes += '\n' + ''
-
-                elif size['stockLevelStatus'] != 'inStock' and store in ITEMS:
-                    # delete from ITEMS
-                    ITEMS.remove(store)
-
-
-            if start == 0 and sizes != '':
-                if KEYWORDS is []:
-                    to_discord.append(dict(
-                        name=item['name'],
-                        sku=product['sku'],
-                        price=product['price']['formattedValue'],
-                        thumbnail=product['images'][0]['url'],
-                        url='https://www.footlocker.co.uk/product/'+product['name'].replace(' ', '-')+'/'+product['sku'] + '.html'
-                    ))
-                
-                else:
-                    for key in KEYWORDS:
-                        if key.lower() in item['name'].lower():
-                            to_discord.append(dict(
-                                name=item['name'],
-                                sku=product['sku'],
-                                price=product['price']['formattedValue'],
-                                thumbnail=product['images'][0]['url'],
-                                url='https://www.footlocker.co.uk/product/'+product['name'].replace(' ', '-')+'/'+product['sku'] + '.html'
-                            ))
-
-        except:
-            pass
-
-    return to_discord
-
+    return get_products('UK', ITEMS, user_agent, proxy, KEYWORDS, start)
 
 def AU(ITEMS, user_agent, proxy, KEYWORDS, start):
-    url = 'https://www.footlocker.com.au/api/products/search?query=men&currentPage=1&sort=newArrivals&pageSize=60'
-    headers = {
-        'accept': 'application/json',
-        'accept-encoding': 'gzip, deflate, br',
-        'accept-language': 'en-GB,en;q=0.9',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-origin',
-        'user-agent': user_agent,
-        'x-api-lang': 'en-GB',
-        'x-fl-request-id': '1470ff80-fae4-11ec-8f44-7b3338a6657b',
-        'x-flapi-session-id': 'th0pgu3oo28l13bhvwqj5yq3i.fzcxwefapipdb828881'
-    }
-    html = requests.get(url=url, headers=headers, proxies=proxy)
-    
-    try:
-        output = json.loads(html.text)['products']
-    except:
-        print('Could not load products. Below was the response: ')
-        print(html.text)
-        return None
-
-    to_discord = []
-    
-    for product in output:
-        try:
-            sku = product['sku']
-            url = f'https://www.footlocker.com.au/api/products/pdp/{sku}'
-            html = requests.get(url=url, headers=headers)
-            item = json.loads(html.text)
-            time.sleep(1)
-
-            # Sizes
-            sizes = ''
-            sizes_start = 1
-            for size in item['sellableUnits']:
-                store = [size['sku'], size['code']]
-                if size['stockLevelStatus'] == 'inStock' and store not in ITEMS:
-                    ITEMS.append(store)
-                    if sizes_start == 1:
-                        sizes = ''
-                        sizes_start = 0
-                    else:
-                        sizes += '\n' + ''
-
-                elif size['stockLevelStatus'] != 'inStock' and store in ITEMS:
-                    # delete from ITEMS
-                    ITEMS.remove(store)
-
-
-            if start == 0 and sizes != '':
-                if KEYWORDS is []:
-                    to_discord.append(dict(
-                        name=item['name'],
-                        sku=product['sku'],
-                        price=product['price']['formattedValue'],
-                        thumbnail=product['images'][0]['url'],
-                        url='https://www.footlocker.com.au/product/'+product['name'].replace(' ', '-')+'/'+product['sku'] + '.html'
-                    ))
-                else:
-                    for key in KEYWORDS:
-                        if key.lower() in item['name'].lower():
-                            to_discord.append(dict(
-                                name=item['name'],
-                                sku=product['sku'],
-                                price=product['price']['formattedValue'],
-                                thumbnail=product['images'][0]['url'],
-                                url='https://www.footlocker.com.au/product/'+product['name'].replace(' ', '-')+'/'+product['sku'] + '.html'
-                            ))
-
-        except:
-            pass
-
-    return to_discord
+    return get_products('AU', ITEMS, user_agent, proxy, KEYWORDS, start)
