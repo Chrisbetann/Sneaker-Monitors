@@ -1,30 +1,24 @@
-# --------------------- WEBHOOK URL ---------------------
-WEBHOOK = ""
+# config.py
 
-# --------------------- LOCATIONS ---------------------
-# Current available locations [US, UK, AU]
-LOCATION = ""
+# Random User Agent Configuration
+from random_user_agent.params import SoftwareName, HardwareType
 
-# --------------------- FREE PROXY ---------------------
-# A single or multiple locations can be added in the array (e.g. ["GB"] or ["GB", "US"])
-ENABLE_FREE_PROXY = False
-FREE_PROXY_LOCATION = ["GB"]
+# Configuration for Random User Agents
+software_names = [SoftwareName.CHROME.value]
+hardware_type = [HardwareType.MOBILE__PHONE]
 
-# --------------------- DELAY ---------------------
-# Delay between site requests
-DELAY = 5
+# General Monitoring Configuration
+LOCATION = 'US'  # Choose between 'US', 'UK', 'AU'
+ENABLE_FREE_PROXY = True
+FREE_PROXY_LOCATION = 'US'  # Proxy country for free proxy ('US', 'UK', 'AU')
+DELAY = 10  # Delay between requests in seconds
+PROXY = []  # Add proxies if needed, e.g., ["http://proxy1", "http://proxy2"]
+KEYWORDS = ["shoes", "Nike", "Adidas"]  # Keywords to search for products
 
-# --------------------- OPTIONAL PROXY ---------------------
-# Proxies must follow this format: "<proxy>:<port>" OR "<proxy_username>:<proxy_password>@<proxy_domain>:<port>")
-# If you want to use multiple proxies, please create an array
-# E.G. PROXY = ["proxy1:proxy1port", "proxy2:proxy2port"]
-PROXY = []
+# Textlocal SMS Configuration
+TEXTLOCAL_API_KEY = 'your_textlocal_api_key_here'
+SENDER = 'FootMon'  # Replace with a valid sender name (6-11 alphanumeric characters)
+TARGET_PHONE_NUMBER = 'target_phone_number_here'
 
-# --------------------- OPTIONAL KEYWORDS ---------------------
-# E.G. KEYWORDS = ["box","logo"]
-KEYWORDS = []
-
-# --------------------- DISCORD BOT FEATURES ---------------------
-USERNAME = "Footlocker"
-AVATAR_URL = "https://raw.githubusercontent.com/yasserqureshi1/Sneaker-Monitors/master/monitors/footlocker/logo.jpg"
-COLOUR = 16777215
+# 2Captcha Configuration for CAPTCHA Solving
+TWOCAPTCHA_API_KEY = 'your_2captcha_api_key_here'
